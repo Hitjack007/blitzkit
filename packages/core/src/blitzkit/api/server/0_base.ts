@@ -158,9 +158,11 @@ export abstract class ServerBlitzKitAPI0 extends BlitzKitAPI {
 
     console.log("Fetching game localizations...");
 
+    const version = (await this.vfs.text("Data/version.txt")).split(" ")[0];
+    const root = `../../temp/game-strings/${version}`;
+
     await Promise.all(
       locales.supported.map(async ({ locale }) => {
-        const root = "../../temp/game-strings";
         const cachePath = `${root}/${locale}.json`;
 
         if (existsSync(cachePath)) {
