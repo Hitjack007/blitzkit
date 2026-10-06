@@ -700,7 +700,11 @@
         },
 
         "firepower": {
-          "title": "Firepower"
+          "title": "Firepower",
+          "spall_liner_shoot": "Shoot at Spall Liner",
+          "spall_liner_dont_shoot": "Don't shoot at Spall Liner",
+          "spall_liner_he": "{damage} - {percent}% = {reduced}",
+          "spall_liner_best": "{reduced} {comparison} {damage}"
         },
 
         "crew": {

@@ -1,4 +1,4 @@
-import { alias, isExplosive } from "@blitzkit/core";
+import { alias, isExplosive, ShellType } from "@blitzkit/core";
 import { literals } from "@blitzkit/i18n";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
 import {
@@ -9,6 +9,7 @@ import {
   Text,
   Tooltip,
 } from "@radix-ui/themes";
+import { SPALL_LINER_HE_DAMAGE_DELTA } from "../../../../../../core/blitzkit/spallLiner";
 import { useLocale } from "../../../../../../hooks/useLocale";
 import { useTankModelDefinition } from "../../../../../../hooks/useTankModelDefinition";
 import { Duel } from "../../../../../../stores/duel";
@@ -33,6 +34,19 @@ export function Firepower({
   const tankModelDefinition = useTankModelDefinition();
   const turretModelDefinition = tankModelDefinition.turrets[turret.id];
   const gunModelDefinition = turretModelDefinition.guns[gun.id];
+  const bestNonHeShell = gun.shells
+    .filter(({ type }) => type !== ShellType.SHELL_TYPE_HE)
+    .reduce<(typeof gun.shells)[number] | undefined>(
+      (best, thisShell) =>
+        best === undefined || thisShell.armor_damage > best.armor_damage
+          ? thisShell
+          : best,
+      undefined,
+    );
+  const damagePerArmorDamage = stats.damage / shell.armor_damage;
+  const spallLinerDamage = stats.damage * (1 + SPALL_LINER_HE_DAMAGE_DELTA);
+  const bestNonHeDamage =
+    bestNonHeShell && bestNonHeShell.armor_damage * damagePerArmorDamage;
 
   return (
     <StatsTableWrapper>
@@ -120,6 +134,62 @@ export function Firepower({
         />
       )}
       <InfoWithDelta stats={stats} decimals={0} value="damage" />
+      {shell.type === ShellType.SHELL_TYPE_HE &&
+        bestNonHeShell !== undefined &&
+        bestNonHeDamage !== undefined && (
+          <Info
+            indent
+            name={
+              <Flex align="center" gap="1" display="inline-flex">
+                {spallLinerDamage > bestNonHeDamage
+                  ? strings.website.tools.tankopedia.firepower
+                      .spall_liner_shoot
+                  : strings.website.tools.tankopedia.firepower
+                      .spall_liner_dont_shoot}
+
+                <Popover.Root>
+                  <Popover.Trigger>
+                    <IconButton variant="ghost" size="1">
+                      <InfoCircledIcon />
+                    </IconButton>
+                  </Popover.Trigger>
+
+                  <Popover.Content style={{ maxWidth: 280 }}>
+                    <Flex direction="column" gap="1">
+                      <Text size="2">
+                        {literals(
+                          strings.website.tools.tankopedia.firepower
+                            .spall_liner_he,
+                          {
+                            damage: Math.round(stats.damage),
+                            percent: Math.abs(SPALL_LINER_HE_DAMAGE_DELTA * 100),
+                            reduced: Math.round(spallLinerDamage),
+                          },
+                        )}
+                      </Text>
+                      <Text size="2">
+                        {literals(
+                          strings.website.tools.tankopedia.firepower
+                            .spall_liner_best,
+                          {
+                            reduced: Math.round(spallLinerDamage),
+                            comparison:
+                              spallLinerDamage > bestNonHeDamage
+                                ? ">"
+                                : spallLinerDamage === bestNonHeDamage
+                                  ? "="
+                                  : "<",
+                            damage: Math.round(bestNonHeDamage),
+                          },
+                        )}
+                      </Text>
+                    </Flex>
+                  </Popover.Content>
+                </Popover.Root>
+              </Flex>
+            }
+          />
+        )}
       {gun.gun_type!.$case !== "regular" && (
         <InfoWithDelta stats={stats} indent decimals={0} value="clipDamage" />
       )}
